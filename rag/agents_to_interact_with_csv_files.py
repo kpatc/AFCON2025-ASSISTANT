@@ -17,10 +17,6 @@ class AfconAgents:
             raise ValueError("GOOGLE_API_KEY not found in environment variables")
             
         genai.configure(api_key=api_key)
-        self.model = ChatGoogleGenerativeAI(
-            model="gemini-pro",
-            google_api_key=api_key
-        )
         self.model = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
         
     def sql_agent(self, question: str, schema: str, history: str = "") -> Dict:
