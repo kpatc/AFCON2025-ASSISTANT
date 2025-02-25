@@ -22,8 +22,8 @@ Welcome to the AFCON 2025 Information Retrieval System! This project is designed
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/yourusername/afcon2025-info-retrieval.git
-    cd afcon2025-info-retrieval
+    git https://github.com/kpatc/AFCON2025-ASSISTANT.git
+    cd AFCON2025-ASSISTANT
     ```
 
 2. **Create a virtual environment**:
