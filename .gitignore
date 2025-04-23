@@ -1,4 +1,9 @@
 __pycache/
 .ipynb_checkpoints/
-hack/
-rag/__pycache__/
+backend/venv/
+backend/__pycache__/
+backend/.env/
+backend/requirement.txt
+backend/database/vector_store/
+frontend/node_modules/
+frontend/build/
