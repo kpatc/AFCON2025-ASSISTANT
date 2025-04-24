@@ -2,7 +2,7 @@ __pycache/
 .ipynb_checkpoints/
 backend/venv/
 backend/__pycache__/
-backend/.env/
+backend/.env
 backend/requirement.txt
 backend/database/vector_store/
 frontend/node_modules/
