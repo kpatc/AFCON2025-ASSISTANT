@@ -27,7 +27,7 @@ The chatbot is built with FastAPI for the backend and React.js for the frontend.
 
 **The agent executor** manages the agent's interaction with various tools, such as web search, ensuring the responses are accurate and detailed.
 
-##Frontend
+## Frontend
 
 **Loading States**: Displays "Processing your request..." while the backend processes queries.
 
@@ -69,38 +69,7 @@ npm start
 
 # Now your application should be up and running:
 # - Backend API at http://localhost:8000
-# - Frontend (UI) at http://localhost:3000
-
-## Usage
-
-### Extract Data from SQLite to JSON
-
-1. **Run the extraction script**:
-    ```bash
-    python CreateDBS/sql_to_json.py
-    ```
-    This will extract data from all tables in the SQLite database and save it to [sqlToJson.json](http://_vscodecontentref_/2).
-
-### Process JSON Files into Vector Database
-
-1. **Run the processing script**:
-    ```bash
-    python CreateDBS/createdbvectfromJson.py
-    ```
-    This will process the JSON files and add them to the vector database.
-
-### Interact with the System
-
-1. **Run the main script**:
-    ```bash
-    python test_rag.py
-    ```
-
-2. **Ask questions about AFCON 2025**:
-    - Example queries:
-        - "Give me some hostels in Rabat"
-        - "Show me the match schedule for Casablanca"
-        - "List pharmacies in Sale"
+# - Frontend (UI) at http://localhost:5173
 
 ## Example Queries
 
