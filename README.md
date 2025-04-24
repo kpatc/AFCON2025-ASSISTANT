@@ -2,49 +2,74 @@
 
 ## Overview
 
-Welcome to the AFCON 2025 Information Retrieval System! This project is designed to provide detailed information about the AFCON 2025 event using a combination of SQL database queries and vector-based document retrieval. The system leverages advanced language models to generate natural language responses based on both structured and unstructured data.
+**CAN 2025 Assistant** is an AI-powered chatbot designed to assist users with any questions related to the Africa Cup of Nations 2025 held in Morocco. Whether you're looking for information on teams, match schedules, stadiums, or news, this chatbot is here to provide real-time responses using agents. 
+The chatbot is built with FastAPI for the backend and React.js for the frontend. The backend processes the user queries using LangChain agents, and the frontend delivers a responsive UI with smooth interactions. The application is designed to offer a user-friendly and helpful experience.
 
 ## Features
 
-- **SQL Database Extraction**: Extract data from SQLite database tables and save it to JSON files.
-- **Vector-Based Document Retrieval**: Use Chroma for similarity search on document embeddings.
-- **Combined Responses**: Merge information from both sources to provide comprehensive answers.
-- **Conversation Memory**: Maintain context across multiple queries for more accurate responses.
+**Real-Time Chat**: Get instant responses to queries about the Africa Cup of Nations.
 
-## Setup
+**Multi-Language Support**: The chatbot can respond in multiple languages, making it accessible to a broader audience.
 
-### Prerequisites
+**Smooth UI**: The frontend displays a loading state, “Processing your request...”, while the backend is handling the response.
 
-- Python 3.8 or higher
-- Virtual environment (recommended)
+## Backend
 
-### Installation
+### Design Overview:
 
-1. **Clone the repository**:
-    ```bash
-    git https://github.com/kpatc/AFCON2025-ASSISTANT.git
-    cd AFCON2025-ASSISTANT
-    ```
+**FastAPI** serves as the web framework, handling HTTP requests and enabling rapid response times.
 
-2. **Create a virtual environment**:
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+**LangChain** is used to build intelligent agents that process user queries. These agents are based on the ReAct framework.
 
-3. **Install dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
+**Prompt Templates** are used to structure queries, enabling a personalized response from the AI.
 
-4. **Set up environment variables**:
-    Create a [.env](http://_vscodecontentref_/1) file in the root directory with the following content:
-    ```plaintext
-    GOOGLE_API_KEY=your_google_api_key
-    ```
+**CORS Middleware** is implemented to allow cross-origin requests between the backend and frontend.
 
-5. **Prepare the database**:
-    Ensure your SQLite database (`afcon2025.db`) is in the root directory.
+**The agent executor** manages the agent's interaction with various tools, such as web search, ensuring the responses are accurate and detailed.
+
+##Frontend
+
+**Loading States**: Displays "Processing your request..." while the backend processes queries.
+
+**Real-Time Updates**: Responses are shown immediately after the backend processes the request.
+
+**Interactive Chat UI**: Designed to be user-friendly and intuitive.
+
+## Installation
+
+# Step 1: Clone the repository
+git clone https://github.com/your-username/can-2025-assistant.git
+cd can-2025-assistant
+
+# Step 2: Setup the Backend
+cd backend
+
+# Step 3: Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate   # On Windows, use `venv\Scripts\activate`
+
+# Step 4: Install the required dependencies for the backend
+pip install -r requirements.txt
+
+# Step 5: Run the FastAPI backend server
+uvicorn api:app --reload
+
+# The backend will be running at http://localhost:8000
+
+# Step 6: Setup the Frontend
+cd ../frontend
+
+# Step 7: Install the required dependencies for the frontend
+npm install
+
+# Step 8: Start the React.js development server
+npm start
+
+# The frontend will be available at http://localhost:3000
+
+# Now your application should be up and running:
+# - Backend API at http://localhost:8000
+# - Frontend (UI) at http://localhost:3000
 
 ## Usage
 
