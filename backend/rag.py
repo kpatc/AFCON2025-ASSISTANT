@@ -7,7 +7,6 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_core.documents import Document
 import os
 from dotenv import load_dotenv
-from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -21,90 +20,77 @@ PERSIST_DIRECTORY = os.path.join("database", "vector_store")
 DATA_DIRECTORY = os.path.join("database", "data_processed")
 
 def process_json_data(json_data, source):
-    """Process JSON data into a format suitable for vectorization with enhanced metadata"""
-    processed_docs = []
+    """Process JSON data into a format suitable for vectorization"""
+    processed_text = []
+
+    def extract_data(data, parent_key=''):
+        """Helper function to recursively extract key-value pairs from the JSON structure"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_key = f"{parent_key}_{key}" if parent_key else key
+                extract_data(value, new_key)
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                extract_data(item, f"{parent_key}_{index}")
+        else:
+            # Add leaf node to the text
+            processed_text.append(f"{parent_key}: {data}")
     
-    if isinstance(json_data, dict):
-        # Metadata enrichment based on source file
-        base_metadata = {
-            'source': source,
-            'type': source.split('_')[0] if '_' in source else 'general',
-            'last_updated': datetime.now().isoformat()
-        }
-        
-        # Add specific metadata based on content type
-        if 'afcon2025' in source:
-            base_metadata['category'] = 'tournament'
-            base_metadata['priority'] = 1
-        elif any(x in source for x in ['hotel', 'restaurant']):
-            base_metadata['category'] = 'accommodation_food'
-            base_metadata['priority'] = 2
-        elif any(x in source for x in ['hospital', 'pharmacies']):
-            base_metadata['category'] = 'health'
-            base_metadata['priority'] = 2
-        
-        # Process each section of the data
-        for key, value in json_data.items():
-            if key != 'metadata':
-                section_text = f"{key}: {json.dumps(value, indent=2, ensure_ascii=False)}"
-                doc = Document(
-                    page_content=section_text,
-                    metadata={**base_metadata, 'section': key}
-                )
-                processed_docs.append(doc)
-    
-    return processed_docs
+    # Start processing the JSON data
+    extract_data(json_data)
+    return "\n".join(processed_text)
 
 def load_json_files():
-    """Load and process all JSON files with enhanced metadata"""
+    """Load and process all JSON files from the data directory"""
     documents = []
     
-    try:
-        for filename in os.listdir(DATA_DIRECTORY):
-            if filename.endswith('.json'):
-                file_path = os.path.join(DATA_DIRECTORY, filename)
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    source_name = filename.replace('.json', '')
-                    docs = process_json_data(data, source_name)
-                    documents.extend(docs)
-        return documents
-    except Exception as e:
-        print(f"Error loading JSON files: {e}")
-        return []
+    # Get all JSON files in the data directory
+    json_files = [f for f in os.listdir(DATA_DIRECTORY) if f.endswith('.json')]
+    
+    for json_file in json_files:
+        file_path = os.path.join(DATA_DIRECTORY, json_file)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Process the JSON data into a more searchable format
+                text = process_json_data(data, json_file)
+                # Create a document with metadata
+                documents.append(Document(
+                    page_content=text,
+                    metadata={
+                        "source": json_file,
+                        "type": json_file.replace('.json', '')
+                    }
+                ))
+        except Exception as e:
+            print(f"Error loading {json_file}: {str(e)}")
+    
+    return documents
 
 def create_vector_store(embedding):
-    """Create a new vector store from documents with optimized chunking"""
+    """Create a new vector store from documents"""
     documents = load_json_files()
-    
-    # Optimized text splitter configuration
     text_splitter = CharacterTextSplitter(
         chunk_size=1000,
-        chunk_overlap=200,
-        length_function=len,
+        chunk_overlap=200,  # Increased overlap for better context
         separator="\n"
     )
     
-    # Split documents into chunks while preserving metadata
-    chunks = []
+    # Split documents into chunks
+    docs = []
     for doc in documents:
         splits = text_splitter.split_text(doc.page_content)
-        for i, split in enumerate(splits):
-            chunks.append(Document(
+        for split in splits:
+            docs.append(Document(
                 page_content=split,
-                metadata={
-                    **doc.metadata,
-                    'chunk_index': i,
-                    'total_chunks': len(splits)
-                }
+                metadata=doc.metadata
             ))
-    
-    # Create and persist the vector store with metadata filtering capability
+
+    # Create and persist the vector store
     return Chroma.from_documents(
-        documents=chunks,
+        documents=docs,
         embedding=embedding,
-        persist_directory=PERSIST_DIRECTORY,
-        collection_metadata={"hnsw:space": "cosine"}  # Optimizing for semantic search
+        persist_directory=PERSIST_DIRECTORY
     )
 
 def init_rag(llm):
@@ -129,6 +115,7 @@ def init_rag(llm):
             except Exception as e:
                 print(f"Error loading existing vector store: {e}")
                 print("Recreating vector store...")
+                # Remove existing store
                 import shutil
                 shutil.rmtree(PERSIST_DIRECTORY, ignore_errors=True)
                 os.makedirs(PERSIST_DIRECTORY, exist_ok=True)
@@ -140,23 +127,17 @@ def init_rag(llm):
         
         vectorstore.persist()  # Persist immediately after creation
         
-        # Configure retriever with metadata-aware search
         retriever = vectorstore.as_retriever(
-            search_type="mmr",  # Using Maximum Marginal Relevance for diversity
             search_kwargs={
-                "k": 5,  # Retrieve top 5 most relevant chunks
-                "lambda_mult": 0.7,  # Balance between relevance and diversity
-                "fetch_k": 20  # Fetch more candidates for MMR to choose from
+                "k": 5  # Retrieve top 5 most relevant chunks
             }
         )
 
-        # Initialize QA chain with metadata handling
         qa_chain = RetrievalQA.from_chain_type(
             llm=llm,
-            chain_type="stuff",
+            chain_type="stuff",  # Using "stuff" method for better context handling
             retriever=retriever,
-            return_source_documents=True,  # Enable source tracking
-            verbose=True
+            return_source_documents=False  # Disable source tracking to fix the output format
         )
 
         return qa_chain

@@ -10,19 +10,7 @@ from langchain.prompts import PromptTemplate
 from llm import init_llm
 from rag import init_rag
 from tools import get_tools
-
-app = FastAPI()
-
-# CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Initialize components
+#  Initialize components
 llm = init_llm()
 qa_chain = init_rag(llm)
 tools = get_tools(qa_chain)
@@ -55,15 +43,17 @@ agent_executor = AgentExecutor(
     handle_parsing_errors=True,
     max_iterations=8,  # Increased to allow for proper tool sequence
     return_intermediate_steps=True,
+    early_stopping_method="generate"
 ).with_config({"run_name": "Agent"})
 
-class ChatMessage(BaseModel):
-    content: str
-    role: str
-    language: Optional[str] = "en"
+query = f"tell me little bit about morocco"
 
-class ChatResponse(BaseModel):
-    response: str
+# Get response from agent with all required variables
+result = agent_executor.invoke({
+    "input": query,
+    "tools": tools_str,
+    "tool_names": ", ".join(tool_names)
+})
 
 def extract_final_answer_generic(steps):
     for step in reversed(steps):
@@ -77,39 +67,7 @@ def extract_final_answer_generic(steps):
     return None
 
 
-@app.post("/chat")
-async def chat_endpoint(message: ChatMessage) -> ChatResponse:
-    # Format query with language preference
-    query = f"Respond in {message.language}. User query: {message.content}"
-    # Get response from agent with all required variables
-    result = agent_executor.invoke({
-        "input": query,
-        "tools": tools_str,
-        "tool_names": ", ".join(tool_names)
-    })
-    # Extract the final answer from intermediate steps
-    steps = result.get("intermediate_steps", [])
-    final_answer = extract_final_answer_generic(steps)
 
-    # Return the extracted response or a fallback message
-    if final_answer:
-        return ChatResponse(response=final_answer)
-    else:
-        return ChatResponse(response="Sorry, I couldn't find a final answer. 🧐")
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "components": {
-            "llm": "operational",
-            "agent": "operational",
-            "rag": "operational",
-            "timestamp": datetime.now().isoformat()
-        }
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)
+steps = result.get("intermediate_steps", [])
+final_answer = extract_final_answer_generic(steps)
+print("✅ Final Answer:", final_answer)

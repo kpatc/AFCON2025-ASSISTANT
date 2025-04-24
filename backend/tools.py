@@ -13,52 +13,9 @@ from functools import lru_cache
 from langchain.agents import Tool
 from langchain.chains import LLMChain
 
-class FinalAnswerException(Exception):
+class FinalAnswerException(BaseException):
     """Exception personnalisée pour gérer la réponse finale"""
     pass
-
-class QueryClassifier:
-    """Classifie les requêtes pour utiliser les outils appropriés"""
-    
-    CATEGORIES = {
-        'match': r'\b(match|game|fixture|schedule|stadium)\b',
-        'accommodation': r'\b(hotel|hostel|room|stay|accommodation)\b',
-        'restaurant': r'\b(restaurant|food|eat|dining)\b',
-        'health': r'\b(hospital|pharmacy|doctor|medical|health)\b',
-        'transport': r'\b(transport|bus|train|taxi|direction|travel)\b',
-        'weather': r'\b(weather|temperature|rain|forecast)\b',
-        'general': r'\b(morocco|afcon|can|tourism|visit)\b'
-    }
-    
-    @staticmethod
-    def classify_query(query: str) -> List[str]:
-        """Retourne les catégories pertinentes pour une requête"""
-        query = query.lower()
-        categories = []
-        
-        for category, pattern in QueryClassifier.CATEGORIES.items():
-            if re.search(pattern, query):
-                categories.append(category)
-        
-        return categories or ['general']
-
-def create_search_all_sources(qa_chain):
-    """Créer une fonction de recherche combinée"""
-    def search_all_sources(query: str) -> str:
-        categories = QueryClassifier.classify_query(query)
-        results = []
-        
-        # Rechercher dans la base de connaissances selon les catégories
-        for category in categories:
-            try:
-                result = qa_chain.run(f"[{category}] {query}")
-                results.append(result)
-            except Exception as e:
-                print(f"Erreur lors de la recherche dans {category}: {str(e)}")
-        
-        return "\n\n".join(results) if results else "Aucune information trouvée."
-    
-    return search_all_sources
 
 @tool
 def final_answer(response: str) -> str:
@@ -93,9 +50,9 @@ def final_answer(response: str) -> str:
             "type": "text"
         }
         
-        raise FinalAnswerException(json.dumps(formatted_response))
+        return formatted_response
         
-    except Exception as e:
+    except BaseException as e:
         if isinstance(e, FinalAnswerException):
             raise e
         return str(e)
@@ -421,52 +378,50 @@ def process_terminal_output(terminal_output: str) -> str:
         response = format_response_from_blocks(blocks)
         
         # Lever l'exception avec la réponse formatée
-        raise FinalAnswerException(response)
+        raise response
         
-    except Exception as e:
+    except BaseException as e:
         if isinstance(e, FinalAnswerException):
             raise e
         return str(e)
 
 def get_tools(qa_chain):
     """Return the list of all available tools in order of priority."""
-    search_all_sources = create_search_all_sources(qa_chain)
-    
+
     tools = [
         Tool(
             name="CAN Knowledge Base",
             func=qa_chain.run,
-            description="PRIORITY 1: Use for specific information about AFCON 2025"
-        ),
-        Tool(
-            name="Local Search",
-            func=search_all_sources,
-            description="PRIORITY 2: Search in the local database including hotels, restaurants, and medical facilities"
+            description= "Use for information about Morocco and AFCON 2025"
+            
         ),
         Tool(
             name="Weather Info",
             func=get_weather,
-            description="PRIORITY 3: Get current weather or forecast for Moroccan cities"
+            description="Get current weather or forecast for Moroccan cities"
         ),
         Tool(
             name="Web Search",
             func=web_search,
-            description="PRIORITY 4: Search for current information about Morocco and AFCON"
+            description="Search for current information about Morocco and AFCON"
         ),
         Tool(
             name="Visit Webpage",
             func=visit_webpage_tool,
-            description="PRIORITY 5: Explore relevant URLs found during search"
+            description="Explore relevant URLs found during search"
         ),
         Tool(
             name="Process Response",
             func=process_terminal_output,
-            description="PRIORITY 6: Process and format responses from other tools"
+            description="Process and format responses from other tools"
         ),
         Tool(
             name="Final Answer",
             func=final_answer,
-            description="PRIORITY 7: Format and structure the final response with appropriate context"
+            description="Format and structure the final response with appropriate context and Use this tool to return the final answer and aftwer stop the process.",
+            return_direct=True,
+            return_direct_args=["final_answer"]
+
         )
     ]
     
