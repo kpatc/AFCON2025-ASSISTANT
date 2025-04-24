@@ -4,6 +4,7 @@
 
 **CAN 2025 Assistant** is an AI-powered chatbot designed to assist users with any questions related to the Africa Cup of Nations 2025 held in Morocco. Whether you're looking for information on teams, match schedules, stadiums, or news, this chatbot is here to provide real-time responses using agents. 
 The chatbot is built with FastAPI for the backend and React.js for the frontend. The backend processes the user queries using LangChain agents, and the frontend delivers a responsive UI with smooth interactions. The application is designed to offer a user-friendly and helpful experience.
+![AFCON Logo](./step4.png)
 
 ## Features
 
@@ -65,11 +66,7 @@ npm install
 # Step 8: Start the React.js development server
 npm start
 
-# The frontend will be available at http://localhost:3000
-
-# Now your application should be up and running:
-# - Backend API at http://localhost:8000
-# - Frontend (UI) at http://localhost:5173
+# The frontend will be available at http://localhost:5173
 
 ## Example Queries
 
