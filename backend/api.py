@@ -76,7 +76,6 @@ def extract_final_answer_generic(steps):
             return step.get("tool_input")
     return None
 
-
 @app.post("/chat")
 async def chat_endpoint(message: ChatMessage) -> ChatResponse:
     # Format query with language preference
@@ -95,7 +94,7 @@ async def chat_endpoint(message: ChatMessage) -> ChatResponse:
     if final_answer:
         return ChatResponse(response=final_answer)
     else:
-        return ChatResponse(response="Sorry, I couldn't find a final answer. 🧐")
+        return ChatResponse(response="Sorry, I couldn't find an answer to your question. Could you please rephrase or clarify it? 😊")
 
 @app.get("/health")
 async def health_check():
